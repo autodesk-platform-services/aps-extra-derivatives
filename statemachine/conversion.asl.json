@@ -1,0 +1,381 @@
+{
+    "StartAt": "Report Job Start",
+    "States": {
+        "Report Job Start": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStatus = :val1, Artifacts = :val2",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "inprogress"
+                    },
+                    ":val2": {
+                        "M": {}
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "Report Download Step"
+        },
+        "Report Download Step": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "Downloading SVF"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "Download"
+        },
+        "Download": {
+            "Type": "Task",
+            "Resource": "${DownloadSvfFunctionArn}",
+            "Next": "Check Download Status"
+        },
+        "Check Download Status": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "success",
+                    "Next": "Report Download Output"
+                },
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "error",
+                    "Next": "Report Error"
+                }
+            ]
+        },
+        "Report Download Output": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1, Artifacts.Svf = :val2",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": ""
+                    },
+                    ":val2": {
+                        "S.$": "$.output"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "Report glTF Conversion Step"
+        },
+        "Report glTF Conversion Step": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "Converting SVF to glTF"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "glTF Conversion"
+        },
+        "glTF Conversion": {
+            "Type": "Task",
+            "Resource": "${ConvertSvfToGltfFunctionArn}",
+            "Next": "Check glTF Conversion Status"
+        },
+        "Check glTF Conversion Status": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "success",
+                    "Next": "Report glTF Conversion Output"
+                },
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "error",
+                    "Next": "Report Error"
+                }
+            ]
+        },
+        "Report glTF Conversion Output": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1, Artifacts.Gltf = :val2",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": ""
+                    },
+                    ":val2": {
+                        "S.$": "$.output"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "Report glb Conversion Step"
+        },
+        "Report glb Conversion Step": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "Converting glTF to glb"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "glb Conversion"
+        },
+        "glb Conversion": {
+            "Type": "Task",
+            "Resource": "${ConvertGltfToGlbFunctionArn}",
+            "Next": "Check glb Conversion Status"
+        },
+        "Check glb Conversion Status": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "success",
+                    "Next": "Report glb Conversion Output"
+                },
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "error",
+                    "Next": "Report Error"
+                }
+            ]
+        },
+        "Report glb Conversion Output": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1, Artifacts.Glb = :val2",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": ""
+                    },
+                    ":val2": {
+                        "S.$": "$.output"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "Report glb/draco Conversion Step"
+        },
+        "Report glb/draco Conversion Step": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "Converting glTF to glb/draco"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "glb/draco Conversion"
+        },
+        "glb/draco Conversion": {
+            "Type": "Task",
+            "Resource": "${ConvertGltfToDracoFunctionArn}",
+            "Next": "Check glb/draco Conversion Status"
+        },
+        "Check glb/draco Conversion Status": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "success",
+                    "Next": "Report glb/draco Conversion Output"
+                },
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "error",
+                    "Next": "Report Error"
+                }
+            ]
+        },
+        "Report glb/draco Conversion Output": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1, Artifacts.GlbDraco = :val2",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": ""
+                    },
+                    ":val2": {
+                        "S.$": "$.output"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "Report USDz Conversion Step"
+        },
+        "Report USDz Conversion Step": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "Converting glb to USDz"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "USDz Conversion"
+        },
+        "USDz Conversion": {
+            "Type": "Task",
+            "Resource": "${ConvertGltfToUsdzFunctionArn}",
+            "Next": "Check USDz Conversion Status"
+        },
+        "Check USDz Conversion Status": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "success",
+                    "Next": "Report USDz Conversion Output"
+                },
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "error",
+                    "Next": "Report Error"
+                }
+            ]
+        },
+        "Report USDz Conversion Output": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStep = :val1, Artifacts.Usdz = :val2",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": ""
+                    },
+                    ":val2": {
+                        "S.$": "$.output"
+                    }
+                }
+            },
+            "ResultPath": null,
+            "Next": "Report Success"
+        },
+        "Report Error": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStatus = :val1",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "failed"
+                    }
+                }
+            },
+            "End": true
+        },
+        "Report Success": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+                "TableName": "${JobsTable}",
+                "Key": {
+                    "UrnGuid": {
+                        "S.$": "States.Format('{}#{}', $.urn, $.guid)"
+                    }
+                },
+                "UpdateExpression": "SET ConversionStatus = :val1",
+                "ExpressionAttributeValues": {
+                    ":val1": {
+                        "S": "success"
+                    }
+                }
+            },
+            "End": true
+        }
+    }
+}

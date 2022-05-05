@@ -1,0 +1,87 @@
+@font-face {
+    font-family: 'Artifakt';
+    src: url('/fonts/Artifakt_Element_Regular.woff2') format('woff2');
+}
+
+body {
+    padding-top: 0;
+    padding-bottom: 1em;
+    font-family: Artifakt;
+}
+
+.navbar ol {
+    padding: 0;
+}
+
+.navbar-brand img {
+    height: 30px;
+    margin-right: 0.25em;
+}
+
+#views-content {
+    border: 1px solid lightgray;
+    border-radius: 0 0 5px 5px;
+    border-top: none;
+    padding: 1em;
+}
+
+#container {
+    padding: 1em;
+}
+
+#tree {
+    width: 100%;
+    max-height: 45em;
+    overflow: scroll;
+    margin-bottom: 1em;
+    border: 1px solid lightgray;
+    border-radius: 5px;
+    padding: 0.5em;
+}
+
+#tree .jstree-icon.jstree-themeicon.jstree-themeicon-custom {
+    background-size: 20px !important;
+}
+
+#preview {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#preview > .btn {
+    margin-right: 0.5em;
+}
+
+#preview .cards {
+    display: flex;
+    flex-flow: row wrap;
+}
+
+#preview .card {
+    margin-right: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#preview .card-body .table {
+    width: 100%;
+}
+
+#preview .card-body .table td {
+    vertical-align: middle;
+}
+
+#preview .card-body .table .btn {
+    width: 100%;
+}
+
+.model-preview {
+    /* width: 256px;
+    height: 256px; */
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+#qr-modal canvas {
+    width: 100%;
+}

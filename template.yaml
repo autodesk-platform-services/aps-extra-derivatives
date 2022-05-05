@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS SAM template for the Forge Extra Derivatives service.
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 600
+    MemorySize: 1024
+    Architectures:
+      - x86_64
+
+Resources:
+  JobsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: jobs
+      PrimaryKey:
+        Name: UrnGuid
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'OPTIONS,POST,GET'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+  GetJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/get-job/
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref SharedLayer
+      Environment:
+        Variables:
+          JOBS_TABLE: !Ref JobsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref JobsTable
+      Events:
+        GetJob:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /jobs/{urn}/{guid}
+            Method: get
+            RestApiId:
+              Ref: RestApi
+
+  PostJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/post-job/
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref SharedLayer
+      Environment:
+        Variables:
+          JOBS_TABLE: !Ref JobsTable
+          CONVERSION_STEP_FUNCTION: !Ref ConversionStateMachine
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobsTable
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt ConversionStateMachine.Name
+      Events:
+        PostJob:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /jobs/{urn}/{guid}
+            Method: post
+            RestApiId:
+              Ref: RestApi
+
+  GenerateArtifactUrlsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/artifact-urls/
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref SharedLayer
+      Environment:
+        Variables:
+          JOBS_TABLE: !Ref JobsTable
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+      Events:
+        GenerateArtifactUrls:
+          Type: Api
+          Properties:
+            Path: /jobs/{urn}/{guid}/signedurl
+            Method: post
+            RestApiId:
+              Ref: RestApi
+
+  ConversionStateMachine:
+    Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    Properties:
+      DefinitionUri: statemachine/conversion.asl.json
+      DefinitionSubstitutions:
+        DownloadSvfFunctionArn: !GetAtt DownloadSvfFunction.Arn
+        ConvertSvfToGltfFunctionArn: !GetAtt ConvertSvfToGltfFunction.Arn
+        ConvertGltfToGlbFunctionArn: !GetAtt ConvertGltfToGlbFunction.Arn
+        ConvertGltfToDracoFunctionArn: !GetAtt ConvertGltfToDracoFunction.Arn
+        ConvertGltfToUsdzFunctionArn: !GetAtt ConvertGltfToUsdzFunction.Arn
+        JobsTable: !Ref JobsTable
+      Tracing:
+        Enabled: true
+      Policies: # Find out more about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - LambdaInvokePolicy:
+            FunctionName: !Ref DownloadSvfFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ConvertSvfToGltfFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ConvertGltfToGlbFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ConvertGltfToDracoFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ConvertGltfToUsdzFunction
+        - DynamoDBWritePolicy:
+            TableName: !Ref JobsTable
+
+  DownloadSvfFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/download-svf/
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref SharedLayer
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  ConvertSvfToGltfFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/svf-to-gltf/
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref SharedLayer
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  ConvertGltfToGlbFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/gltf-to-glb/
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref SharedLayer
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  ConvertGltfToDracoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/gltf-to-draco/
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref SharedLayer
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  ConvertGltfToUsdzFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./functions/gltf-to-usdz
+      DockerTag: gltf-to-usdz-lambda
+
+  SharedLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: shared
+      Description: Shared code and dependencies.
+      ContentUri: layers/shared/
+      CompatibleRuntimes:
+        - nodejs14.x
+      LicenseInfo: 'MIT'
+      RetentionPolicy: Retain
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  GetJobApi:
+    Description: "API Gateway endpoint URL for Prod stage for GetJob function"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/jobs/{urn}/{guid}"
+  PostJobApi:
+    Description: "API Gateway endpoint URL for Prod stage for PostJob function"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/jobs/{urn}/{guid}"
+  GenerateArtifactUrlsApi:
+    Description: "API Gateway endpoint URL for Prod stage for GenerateArtifactUrls function"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/jobs/{urn}/{guid}/signedurl"
+  ConversionStateMachineArn:
+    Description: "Conversion pipeline state machine ARN"
+    Value: !Ref ConversionStateMachine

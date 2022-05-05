@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forge Extra Derivatives</title>
+    <link rel="stylesheet" href="https://petrbroz.github.io/forge-bootstrap-theme/forge-bootstrap-light.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+    <link rel="stylesheet" href="/styles/index.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">
+            <img src="/images/forge-logo-white.png" alt="Autodesk Forge"> Forge Extra Derivatives
+        </a>
+        <a id="login" class="btn btn-secondary ml-auto" data-visibility="logged-out" style="display: none;">Login</a>
+        <a id="logout" class="btn btn-secondary ml-auto" data-visibility="logged-in" style="display: none;">Logout</a>
+    </nav>
+    <div id="container" class="row" data-visibility="logged-in" style="display: none;">
+        <div id="browser" class="col-12 col-md-6 col-lg-4">
+            <div class="form-group row">
+                <label for="hubs" class="col-3 col-form-label col-form-label-sm">Hub</label>
+                <div class="col-9">
+                    <select id="hubs" class="form-control custom-select custom-select-sm"></select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="projects" class="col-3 col-form-label col-form-label-sm">Project</label>
+                <div class="col-9">
+                    <select id="projects" class="form-control custom-select custom-select-sm"></select>
+                </div>
+            </div>
+            <div id="tree"></div>
+        </div>
+        <div id="preview" class="col-12 col-md-6 col-lg-8">
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="qr-modal" tabindex="-1" role="dialog" aria-labelledby="qr-modal-label"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="qr-modal-label">QR</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <!-- <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div> -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/forge-server-utils/dist/browser/forge-server-utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.js"></script>
+    <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+    <script src="/scripts/index.js"></script>
+</body>
+
+</html>

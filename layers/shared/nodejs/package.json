@@ -1,0 +1,10 @@
+{
+    "dependencies": {
+        "adm-zip": "^0.5.9",
+        "aws-sdk": "^2.1113.0",
+        "forge-convert-utils": "^4.0.1",
+        "forge-server-utils": "^8.3.5",
+        "fs-extra": "^10.1.0",
+        "gltf-pipeline": "^3.0.4"
+    }
+}
