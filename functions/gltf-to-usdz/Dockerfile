@@ -28,5 +28,8 @@ COPY *.py ${FUNCTION_DIR}/
 # Set working directory to function root directory
 WORKDIR ${FUNCTION_DIR}
 
+# Map /tmp to /var/tmp because that's where the usd_from_gltf tool writes to
+RUN rm -rf /var/tmp && ln -s /tmp /var/tmp
+
 ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]
 CMD [ "app.lambda_handler" ]
