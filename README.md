@@ -26,3 +26,18 @@ Here's a quick description of the different resources used in the AWS SAM templa
 The _ConversionStateMachine_ consists of the following states:
 
 ![Conversion state machine](./docs/conversion-state-machine.png)
+
+## Usage
+
+The service has been deployed to AWS and can be used - **for experimental purposes** - like so:
+
+1. Use the `POST https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com/Prod/jobs/{urn}/{guid}` request to process a specific Forge model.
+2. Use the `GET https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com/Prod/jobs/{urn}/{guid}` request to check the status of the processing.
+3. Use the `POST https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com/Prod/jobs/{urn}/{guid}/signedurl` to generate temporary, read-only
+signed URLs for downloading the different artifacts.
+
+In all the requests listed above, replace `{urn}` with the Model Derivative URN of your model, and
+`{guid}` with the GUID of the specific viewable you want to process, and provide an `Authorization`
+header with the same token you would use in requests to the Model Derivative service.
+
+> Tip: viewables are listed in the Model Derivative manifest with `"mime": "application/autodesk-svf"`.

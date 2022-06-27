@@ -24,6 +24,7 @@ Resources:
 
   ArtifactsBucket:
     Type: AWS::S3::Bucket
+    # TODO: add S3-managed server side encryption
 
   RestApi:
     Type: AWS::Serverless::Api
