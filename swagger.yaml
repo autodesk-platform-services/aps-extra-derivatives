@@ -15,6 +15,9 @@ paths:
       summary: "Get conversion status"
       description: "Returns the status of a conversion job for a specific model."
       operationId: "getJobStatus"
+      security:
+        - ForgeAuth2L: ["viewables:read"]
+        - ForgeAuth3L: ["viewables:read"]
       produces:
       - "application/json"
       parameters:
@@ -47,6 +50,9 @@ paths:
       summary: "Start conversion"
       description: "Starts the conversion job for a specific model."
       operationId: "startJob"
+      security:
+        - ForgeAuth2L: ["viewables:read"]
+        - ForgeAuth3L: ["viewables:read"]
       produces:
       - "application/json"
       parameters:
@@ -80,6 +86,9 @@ paths:
       summary: "Generate download URLs"
       description: "Generates public URLs to download conversion artifacts."
       operationId: "generateUrls"
+      security:
+        - ForgeAuth2L: ["viewables:read"]
+        - ForgeAuth3L: ["viewables:read"]
       produces:
       - "application/json"
       parameters:
@@ -112,12 +121,16 @@ definitions:
     properties:
       urn:
         type: "string"
+        description: "Forge model URN."
       guid:
         type: "string"
+        description: "Forge model viewable GUID."
       step:
-        type: "string"  
+        type: "string"
+        description: "Short description of the current conversion step."
       status:
         type: "string"
+        description: "Conversion job status."
         enum:
         - "inprogress"
         - "failed"
@@ -144,3 +157,19 @@ definitions:
       Usdz:
         type: "string"
         description: "Temporary presigned URL for downloading the conversion output."
+securityDefinitions:
+  ForgeAuth2L:
+    type: oauth2
+    flow: application
+    description: Autodesk Forge 2-legged authentication.
+    tokenUrl: https://developer.api.autodesk.com/authentication/v1/authenticate
+    scopes:
+      "viewables:read": Grants read access to Model Derivative service viewables.
+  ForgeAuth3L:
+    type: oauth2
+    flow: accessCode
+    description: Autodesk Forge 3-legged authentication.
+    authorizationUrl: https://developer.api.autodesk.com/authentication/v1/authorize
+    tokenUrl: https://developer.api.autodesk.com/authentication/v1/gettoken
+    scopes:
+      "viewables:read": Grants read access to Model Derivative service viewables.
