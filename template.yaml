@@ -25,6 +25,7 @@ Resources:
   ArtifactsBucket:
     Type: AWS::S3::Bucket
     # TODO: add S3-managed server side encryption
+    # TODO: add CORS setup for public signed URLs
 
   RestApi:
     Type: AWS::Serverless::Api

@@ -1,5 +1,5 @@
-const FORGE_CLIENT_ID = 'CUWAG7yAMhe1fLx45AeSJ5HyhulgrbGc';
-const API_HOST = 'https://b77marvza6.execute-api.us-east-1.amazonaws.com';
+const FORGE_CLIENT_ID = 'gnChEZ6tph1H9IAelM2mYufYZVU1qqKt';
+const API_HOST = 'https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com';
 
 // Check if new access token is provided in the URL
 const { hash } = window.location;
@@ -56,11 +56,6 @@ if (window.ACCESS_TOKEN) {
         url.searchParams.set('scope', 'data:read viewables:read');
         window.location.replace(url.toString());
     });
-}
-
-function getRegion() {
-    const params = new URLSearchParams(window.location.search);
-    return params.has('region') ? params.get('region') : 'us';
 }
 
 async function updateHubsDropdown() {
@@ -147,7 +142,7 @@ async function updatePreview(urn, guid) {
     $preview.text('Loading...');
 
     try {
-        const resp = await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}?region=${getRegion()}`, {
+        const resp = await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}`, {
             headers: { 'Authorization': 'Bearer ' + window.ACCESS_TOKEN }
         });
         if (resp.ok) {
@@ -156,13 +151,15 @@ async function updatePreview(urn, guid) {
         } else if (resp.status === 404) {
             updatePreviewUnavailable(urn, guid);
         } else {
+            console.error(resp);
             throw new Error(await resp.text());
         }
     } catch (err) {
+        console.error(err);
         $preview.empty();
         $preview.append(`
             <div class="alert alert-danger">
-                ${err}
+                Could not retrieve job status. See console for more details.
             </div>
         `);
     }
@@ -171,87 +168,91 @@ async function updatePreview(urn, guid) {
 async function updatePreviewAvailable(urn, guid, job) {
     const $preview = $('#preview');
     $preview.empty();
-    if (job.Artifacts && Object.keys(job.Artifacts).length > 0) {
-        $preview.append(`
-            <div class="cards"></div>
-        `);
-        const $cards = $('#preview .cards');
-        // for (const artifactType of Object.keys(job.Artifacts)) {
-        //     const artifact = job.Artifacts[artifactType];
-        //     $cards.append(`
-        //         <div id="view-${guid}" class="card">
-        //             ${viewable.derivatives.glb && viewable.derivatives.glb.url ? `<div class="card-img-top"><model-viewer class="model-preview" src="${viewable.derivatives.glb.url}" alt="glb preview" auto-rotate camera-controls ar ar-modes="webxr scene-viewer quick-look fallback" ar-scale="auto"></model-viewer></div>`: ''}
-        //             <div class="card-body">
-        //                 <h5 class="card-title">${viewable.name}</h5>
-        //                 <table id="output-${guid}" class="table table-hover table-sm">
-        //                     <thead>
-        //                         <tr>
-        //                             <th scope="col"></th>
-        //                             <th scope="col"></th>
-        //                             <th scope="col"></th>
-        //                             <th scope="col"></th>
-        //                         </tr>
-        //                     </thead>
-        //                     <tbody>
-        //                     </tbody>
-        //                 </table>
-        //             </div>
-        //         </div>
-        //     `);
-        //     const $tbody = $(`#output-${guid} > tbody`);
-        //     const statusToBadge = (status) => {
-        //         switch (status) {
-        //             case 'enqueued':
-        //                 return `<span class="badge badge-secondary">Enqueued</span>`;
-        //             case 'pending':
-        //                 return `<span class="badge badge-warning">Pending</span>`;
-        //             case 'complete':
-        //                 return `<span class="badge badge-success">Complete</span>`;
-        //             case 'failed':
-        //                 return `<span class="badge badge-danger">Failed</span>`;
-        //         }
-        //     };
-        //     for (const derivativeType of Object.keys(viewable.derivatives)) {
-        //         const derivative = viewable.derivatives[derivativeType];
-        //         $tbody.append(`
-        //             <tr id="output-${guid}-${derivativeType}">
-        //                 <td>${derivativeType}</td>
-        //                 <td>${statusToBadge(derivative.status)}</td>
-        //                 <td>${derivative.url ? `<a href="${derivative.url}" class="btn btn-sm btn-outline-secondary">Link</a>` : ''}</td>
-        //                 <td>${derivative.url ? `<a href="#" data-qr-url="${derivative.url}" class="btn btn-sm btn-outline-secondary">QR</a>` : ''}</td>
-        //             </tr>
-        //         `);
-        //     }
-        // }
-        // $('a[data-qr-url]').click((ev) => {
-        //     const url = $(ev.target).data('qr-url');
-        //     $('#qr-modal .modal-body').empty().qrcode({
-        //         width: 512,
-        //         height: 512,
-        //         text: url
-        //     });
-        //     $('#qr-modal').modal('show');
-        // });
-        // $preview.append(`<button id="delete-job" class="btn btn-danger">Remove All</button>`);
-        // $('#delete-job').click(() => {
-        //     fetch(API_HOST + '/api/v1/jobs/' + urn + `?region=${getRegion()}`, {
-        //         method: 'DELETE',
-        //         headers: { 'Authorization': 'Bearer ' + window.ACCESS_TOKEN }
-        //     }).then(() => {
-        //         updatePreview(urn, guid);
-        //     });
-        // });
-    } else {
-        $preview.append(`
-            <div class="alert alert-info">
-                No artifacts available.
-            </div>
-        `);
+    switch (job.status) {
+        case 'inprogress':
+            $preview.append(`
+                <div class="alert alert-info">
+                    Translation is in progress. Try again later.
+                </div>
+            `);
+            $preview.append(`<button id="refresh-job" class="btn btn-secondary">Refresh</button>`);
+            $('#refresh-job').click(() => updatePreview(urn, guid));
+            break;
+        case 'failed':
+            console.error(job);
+            $preview.append(`
+                <div class="alert alert-danger">
+                    Translation failed. See console for more details.
+                </div>
+            `);
+            break;
+        case 'success':
+            try {
+                const resp = await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}/signedurl`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + window.ACCESS_TOKEN }
+                });
+                if (!resp.ok) {
+                    console.error(resp);
+                    throw new Error(await resp.text());
+                }
+                const urls = await resp.json();
+                $preview.append(`
+                    <div class="cards">
+                        <div id="preview-${urn}-${guid}" class="card">
+                            ${urls['GlbDraco'] ? `<div class="card-img-top"><model-viewer class="model-preview" src="${urls['GlbDraco']}" alt="glb preview" auto-rotate camera-controls ar ar-modes="webxr scene-viewer quick-look fallback" ar-scale="auto"></model-viewer></div>`: ''}
+                            <div class="card-body">
+                                <h5 class="card-title">Outputs</h5>
+                                <table id="outputs-${urn}-${guid}" class="table table-hover table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col"></th>
+                                            <th scope="col"></th>
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${
+                                            Object.keys(urls).map(artifactType => {
+                                                const artifactUrl = urls[artifactType];
+                                                return `
+                                                    <tr id="output-${urn}-${guid}-${artifactType}">
+                                                        <td>${artifactType}</td>
+                                                        <td>
+                                                            <a href="${artifactUrl}" class="btn btn-sm btn-outline-secondary">Download</a>
+                                                        </td>
+                                                        <td>
+                                                            <a href="#" data-qr-url="${artifactUrl}" class="btn btn-sm btn-outline-secondary">QR</a>
+                                                        </td>
+                                                    </tr>
+                                                `;
+                                            }).join('\n')
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                $('a[data-qr-url]').click((ev) => {
+                    const url = $(ev.target).data('qr-url');
+                    $('#qr-modal .modal-body').empty().qrcode({
+                        width: 512,
+                        height: 512,
+                        text: url
+                    });
+                    $('#qr-modal').modal('show');
+                });
+            } catch (err) {
+                console.error(err);
+                $preview.append(`
+                    <div class="alert alert-danger">
+                        Could not access translation outputs. See console for more details.
+                    </div>
+                `);
+            }
+            break;
     }
-    $preview.append(`<button id="refresh-job" class="btn btn-secondary">Refresh</button>`);
-    $('#refresh-job').click(() => {
-        updatePreview(urn, guid);
-    });
 }
 
 async function updatePreviewUnavailable(urn, guid) {
@@ -264,7 +265,7 @@ async function updatePreviewUnavailable(urn, guid) {
             <button id="start-job" class="btn btn-primary">Start Conversion</button>
         `);
     $('#start-job').click(async () => {
-        await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}?region=${getRegion()}`, {
+        await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}`, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + window.ACCESS_TOKEN }
         });
