@@ -1,0 +1,146 @@
+swagger: "2.0"
+info:
+  description: "Experimental AWS serverless architecture for post-processing 3D models from Autodesk Forge to additional formats such as glTF, glb, or Usdz."
+  version: "1.0.0"
+  title: "Forge Extra Derivatives"
+host: "m5ey85w3lk.execute-api.us-west-2.amazonaws.com"
+basePath: "/Prod"
+schemes:
+- "https"
+paths:
+  /jobs/{urn}/{guid}:
+    get:
+      tags:
+      - "job"
+      summary: "Get conversion status"
+      description: "Returns the status of a conversion job for a specific model."
+      operationId: "getJobStatus"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "urn"
+        in: "path"
+        description: "Forge model URN"
+        required: true
+        type: "string"
+      - name: "guid"
+        in: "path"
+        description: "Forge model viewable GUID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/Job"
+        400:
+          description: "Bad Request"
+        401:
+          description: "Unauthorized"
+        404:
+          description: "Not Found"
+        500:
+          description: "Internal Server Error"
+    post:
+      tags:
+      - "job"
+      summary: "Start conversion"
+      description: "Starts the conversion job for a specific model."
+      operationId: "startJob"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "urn"
+        in: "path"
+        description: "Forge model URN"
+        required: true
+        type: "string"
+      - name: "guid"
+        in: "path"
+        description: "Forge model viewable GUID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/Job"
+        400:
+          description: "Bad Request"
+        401:
+          description: "Unauthorized"
+        404:
+          description: "Not Found"
+        500:
+          description: "Internal Server Error"
+  /jobs/{urn}/{guid}/signedurl:
+    post:
+      tags:
+      - "job"
+      summary: "Generate download URLs"
+      description: "Generates public URLs to download conversion artifacts."
+      operationId: "generateUrls"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "urn"
+        in: "path"
+        description: "Forge model URN"
+        required: true
+        type: "string"
+      - name: "guid"
+        in: "path"
+        description: "Forge model viewable GUID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/Artifacts"
+        400:
+          description: "Bad Request"
+        401:
+          description: "Unauthorized"
+        404:
+          description: "Not Found"
+        500:
+          description: "Internal Server Error"
+definitions:
+  Job:
+    type: "object"
+    properties:
+      urn:
+        type: "string"
+      guid:
+        type: "string"
+      step:
+        type: "string"  
+      status:
+        type: "string"
+        enum:
+        - "inprogress"
+        - "failed"
+        - "success"
+    required:
+      - urn
+      - guid
+      - status
+  Artifacts:
+    type: "object"
+    properties:
+      Svf:
+        type: "string"
+        description: "Temporary presigned URL for downloading the conversion output."
+      Gltf:
+        type: "string"
+        description: "Temporary presigned URL for downloading the conversion output."
+      Glb:
+        type: "string"
+        description: "Temporary presigned URL for downloading the conversion output."
+      GlbDraco:
+        type: "string"
+        description: "Temporary presigned URL for downloading the conversion output."
+      Usdz:
+        type: "string"
+        description: "Temporary presigned URL for downloading the conversion output."
