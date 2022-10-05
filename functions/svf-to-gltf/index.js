@@ -4,7 +4,9 @@ const { downloadArtifact, uploadArtifact, decompress, compress } = require('/opt
 
 async function convert(inputSvfPath, outputDir) {
     const reader = await SvfReader.FromFileSystem(inputSvfPath);
-    const scene = await reader.read();
+    const scene = await reader.read({
+        skipPropertyDb: true
+    });
     let writer = new GltfWriter({
         deduplicate: true,
         skipUnusedUvs: false,
