@@ -4,8 +4,8 @@ const { ModelDerivativeClient, ManifestHelper } = require('forge-server-utils');
 const { SvfReader } = require('forge-convert-utils');
 const { uploadArtifact, compress } = require('/opt/nodejs/helpers.js');
 
-async function download(urn, guid, token, outputFolder) {
-    const modelDerivativeClient = new ModelDerivativeClient({ token });
+async function download(urn, guid, token, region, outputFolder) {
+    const modelDerivativeClient = new ModelDerivativeClient({ token }, undefined, region);
     const helper = new ManifestHelper(await modelDerivativeClient.getManifest(urn));
     const derivatives = helper.search({ guid, type: 'resource', role: 'graphics' });
     if (derivatives.length === 0) {
@@ -18,7 +18,7 @@ async function download(urn, guid, token, outputFolder) {
     const svf = await modelDerivativeClient.getDerivative(urn, encodeURI(derivative.urn));
     fse.ensureDirSync(outputFolder);
     fse.writeFileSync(path.join(outputFolder, 'output.svf'), new Uint8Array(svf));
-    const reader = await SvfReader.FromDerivativeService(urn, guid, { token });
+    const reader = await SvfReader.FromDerivativeService(urn, guid, { token }, undefined, region);
     const manifest = await reader.getManifest();
     for (const asset of manifest.assets) {
         if (!asset.URI.startsWith('embed:')) {
@@ -34,19 +34,21 @@ async function download(urn, guid, token, outputFolder) {
 }
 
 exports.handler = async (event) => {
-    const { urn, guid, token } = event;
+    const { urn, guid, token, region } = event;
     console.assert(urn);
     console.assert(guid);
     console.assert(token);
+    console.assert(region);
 
     console.log('URN', urn);
     console.log('GUID', guid);
+    console.log('Region', region);
 
     try {
         const tmpFolder = `/tmp/${urn}/${guid}`;
         fse.ensureDirSync(tmpFolder);
         console.log('Downloading SVF assets');
-        await download(urn, guid, token, `${tmpFolder}/svf/${urn}/${guid}`);
+        await download(urn, guid, token, region, `${tmpFolder}/svf/${urn}/${guid}`);
         console.log('Compressing SVF assets');
         await compress(`${tmpFolder}/svf`, `${tmpFolder}/svf.zip`);
         console.log('Uploading SVF artifact');

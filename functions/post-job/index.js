@@ -5,10 +5,10 @@ const { JOBS_TABLE, CONVERSION_STEP_FUNCTION } = process.env;
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 const sf = new StepFunctions({ apiVersion: '2016-11-23' });
 
-async function startConversion(urn, guid, token) {
+async function startConversion(urn, guid, token, region) {
     const params = {
         // name: `${urn}#${guid}`, // Must be less than 80 characters
-        input: JSON.stringify({ urn, guid, token }),
+        input: JSON.stringify({ urn, guid, token, region }),
         stateMachineArn: CONVERSION_STEP_FUNCTION
     };
     const result = await sf.startExecution(params).promise();
@@ -18,16 +18,18 @@ async function startConversion(urn, guid, token) {
 exports.handler = async (event) => {
     const { urn, guid } = event.pathParameters;
     const token = (event.headers['Authorization'] || '').replace('Bearer ', '');
+    const region = (event?.queryStringParameters?.region === 'emea') ? 'EMEA' : 'US';
     console.assert(urn);
     console.assert(guid);
     console.assert(token);
 
     console.log('URN', urn);
     console.log('GUID', guid);
+    console.log('Region', region);
 
     try {
         console.log('Checking authorization');
-        const modelDerivativeClient = new ModelDerivativeClient({ token });
+        const modelDerivativeClient = new ModelDerivativeClient({ token }, undefined, region);
         await modelDerivativeClient.getManifest(urn);
         // TODO: check if the specified GUID exists
     } catch (err) {
@@ -71,7 +73,7 @@ exports.handler = async (event) => {
 
     try {
         console.log('Kicking-off conversion');
-        await startConversion(urn, guid, token);
+        await startConversion(urn, guid, token, region);
     } catch (err) {
         console.error(err);
         return {

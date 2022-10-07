@@ -1,11 +1,16 @@
 const FORGE_CLIENT_ID = 'gnChEZ6tph1H9IAelM2mYufYZVU1qqKt';
 const API_HOST = 'https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com';
 
+function getRegion() {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('region') && params.get('region').toLowerCase() === 'emea' ? 'emea' : 'us';
+}
+
 // Check if new access token is provided in the URL
 const { hash } = window.location;
 if (hash.length > 0) {
     const params = new Map();
-    hash.substr(1).split('&').forEach(pair => {
+    hash.substring(1).split('&').forEach(pair => {
         const tokens = pair.split('=');
         if (tokens.length === 2) {
             params.set(tokens[0], tokens[1]);
@@ -43,8 +48,8 @@ if (window.ACCESS_TOKEN) {
         window.localStorage.removeItem('forge_token_expires_at');
         window.location.reload();
     });
-    window.bim360Client = new forge.BIM360Client({ token: window.ACCESS_TOKEN });
-    window.modelDerivativeClient = new forge.ModelDerivativeClient({ token: window.ACCESS_TOKEN });
+    window.bim360Client = new forge.BIM360Client({ token: window.ACCESS_TOKEN }, undefined, getRegion().toUpperCase());
+    window.modelDerivativeClient = new forge.ModelDerivativeClient({ token: window.ACCESS_TOKEN }, undefined, getRegion().toUpperCase());
     updateHubsDropdown();
 } else {
     $('[data-visibility="logged-out"]').show();
@@ -146,7 +151,7 @@ async function updatePreview(urn, guid) {
     $preview.text('Loading...');
 
     try {
-        const resp = await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}`, {
+        const resp = await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}?region=${getRegion()}`, {
             headers: { 'Authorization': 'Bearer ' + window.ACCESS_TOKEN }
         });
         if (resp.ok) {
@@ -192,7 +197,7 @@ async function updatePreviewAvailable(urn, guid, job) {
             break;
         case 'success':
             try {
-                const resp = await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}/signedurl`, {
+                const resp = await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}/signedurl?region=${getRegion()}`, {
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + window.ACCESS_TOKEN }
                 });
@@ -269,7 +274,7 @@ async function updatePreviewUnavailable(urn, guid) {
             <button id="start-job" class="btn btn-primary">Start Conversion</button>
         `);
     $('#start-job').click(async () => {
-        await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}`, {
+        await fetch(`${API_HOST}/Prod/jobs/${urn}/${guid}?region=${getRegion()}`, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + window.ACCESS_TOKEN }
         });

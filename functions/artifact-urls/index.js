@@ -8,16 +8,18 @@ const s3 = new S3({ apiVersion: '2006-03-01' });
 exports.handler = async (event) => {
     const { urn, guid } = event.pathParameters;
     const token = (event.headers['Authorization'] || '').replace('Bearer ', '');
+    const region = (event?.queryStringParameters?.region === 'emea') ? 'EMEA' : 'US';
     console.assert(urn);
     console.assert(guid);
     console.assert(token);
 
     console.log('URN', urn);
     console.log('GUID', guid);
+    console.log('Region', region);
 
     try {
         console.log('Checking authorization');
-        const modelDerivativeClient = new ModelDerivativeClient({ token });
+        const modelDerivativeClient = new ModelDerivativeClient({ token }, undefined, region);
         await modelDerivativeClient.getManifest(urn);
         // TODO: check if the specified GUID exists
     } catch (err) {
