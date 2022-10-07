@@ -115,17 +115,21 @@ async function updateDocumentTree() {
                     //const versions = await window.bim360Client.listVersions(projectId, obj.id);
                     const tipVersion = await window.bim360Client.getTipVersion(projectId, obj.id);
                     const urn = btoa(tipVersion.id).replace('=', '').replace('/', '_');
-                    const resp = await window.modelDerivativeClient.getMetadata(urn);
-                    const metadata = resp.data.metadata;
-                    callback(metadata.filter(viewable => viewable.role === '3d').map(viewable => {
-                        return {
-                            text: viewable.name,
-                            id: `${viewable.guid}`,
-                            data: { type: 'viewable', urn, guid: viewable.guid },
-                            children: false,
-                            icon: `https://icongr.am/octicons/file-media.svg`
-                        };
-                    }));
+                    try {
+                        const resp = await window.modelDerivativeClient.getMetadata(urn);
+                        const { metadata } = resp.data;
+                        callback(metadata.filter(viewable => viewable.role === '3d').map(viewable => {
+                            return {
+                                text: viewable.name,
+                                id: `${viewable.guid}`,
+                                data: { type: 'viewable', urn, guid: viewable.guid },
+                                children: false,
+                                icon: `https://icongr.am/octicons/file-media.svg`
+                            };
+                        }));
+                    } catch (err) {
+                        callback([]);
+                    }
                 }
             }
         }
