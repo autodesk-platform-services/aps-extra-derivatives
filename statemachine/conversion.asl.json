@@ -299,6 +299,14 @@
         "USDz Conversion": {
             "Type": "Task",
             "Resource": "${ConvertGltfToUsdzFunctionArn}",
+            "Retry": [{
+                "ErrorEquals": [
+                    "States.ALL"
+                ],
+                "IntervalSeconds": 3,
+                "MaxAttempts": 3,
+                "BackoffRate": 1.5
+             }],
             "Next": "Check USDz Conversion Status"
         },
         "Check USDz Conversion Status": {
