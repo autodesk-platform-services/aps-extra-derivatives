@@ -1,8 +1,8 @@
 swagger: "2.0"
 info:
-  description: "Experimental AWS serverless architecture for post-processing 3D models from Autodesk Forge to additional formats such as glTF, glb, or Usdz."
+  description: "Experimental AWS serverless architecture for post-processing 3D models from Autodesk Platform Services to additional formats such as glTF, glb, or Usdz."
   version: "1.0.0"
-  title: "Forge Extra Derivatives"
+  title: "APS Extra Derivatives"
 host: "m5ey85w3lk.execute-api.us-west-2.amazonaws.com"
 basePath: "/Prod"
 schemes:
@@ -16,19 +16,19 @@ paths:
       description: "Returns the status of a conversion job for a specific model."
       operationId: "getJobStatus"
       security:
-        - ForgeAuth2L: ["viewables:read"]
-        - ForgeAuth3L: ["viewables:read"]
+        - Auth2L: ["viewables:read"]
+        - Auth3L: ["viewables:read"]
       produces:
       - "application/json"
       parameters:
       - name: "urn"
         in: "path"
-        description: "Forge model URN"
+        description: "APS model URN"
         required: true
         type: "string"
       - name: "guid"
         in: "path"
-        description: "Forge model viewable GUID"
+        description: "APS model viewable GUID"
         required: true
         type: "string"
       responses:
@@ -51,19 +51,19 @@ paths:
       description: "Starts the conversion job for a specific model."
       operationId: "startJob"
       security:
-        - ForgeAuth2L: ["viewables:read"]
-        - ForgeAuth3L: ["viewables:read"]
+        - Auth2L: ["viewables:read"]
+        - Auth3L: ["viewables:read"]
       produces:
       - "application/json"
       parameters:
       - name: "urn"
         in: "path"
-        description: "Forge model URN"
+        description: "APS model URN"
         required: true
         type: "string"
       - name: "guid"
         in: "path"
-        description: "Forge model viewable GUID"
+        description: "APS model viewable GUID"
         required: true
         type: "string"
       responses:
@@ -87,19 +87,19 @@ paths:
       description: "Generates public URLs to download conversion artifacts."
       operationId: "generateUrls"
       security:
-        - ForgeAuth2L: ["viewables:read"]
-        - ForgeAuth3L: ["viewables:read"]
+        - Auth2L: ["viewables:read"]
+        - Auth3L: ["viewables:read"]
       produces:
       - "application/json"
       parameters:
       - name: "urn"
         in: "path"
-        description: "Forge model URN"
+        description: "APS model URN"
         required: true
         type: "string"
       - name: "guid"
         in: "path"
-        description: "Forge model viewable GUID"
+        description: "APS model viewable GUID"
         required: true
         type: "string"
       responses:
@@ -121,10 +121,10 @@ definitions:
     properties:
       urn:
         type: "string"
-        description: "Forge model URN."
+        description: "APS model URN."
       guid:
         type: "string"
-        description: "Forge model viewable GUID."
+        description: "APS model viewable GUID."
       step:
         type: "string"
         description: "Short description of the current conversion step."
@@ -158,17 +158,17 @@ definitions:
         type: "string"
         description: "Temporary presigned URL for downloading the conversion output."
 securityDefinitions:
-  ForgeAuth2L:
+  Auth2L:
     type: oauth2
     flow: application
-    description: Autodesk Forge 2-legged authentication.
+    description: APS 2-legged authentication.
     tokenUrl: https://developer.api.autodesk.com/authentication/v1/authenticate
     scopes:
       "viewables:read": Grants read access to Model Derivative service viewables.
-  ForgeAuth3L:
+  Auth3L:
     type: oauth2
     flow: accessCode
-    description: Autodesk Forge 3-legged authentication.
+    description: APS 3-legged authentication.
     authorizationUrl: https://developer.api.autodesk.com/authentication/v1/authorize
     tokenUrl: https://developer.api.autodesk.com/authentication/v1/gettoken
     scopes:

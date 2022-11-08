@@ -1,4 +1,4 @@
-const FORGE_CLIENT_ID = 'gnChEZ6tph1H9IAelM2mYufYZVU1qqKt';
+const APS_CLIENT_ID = 'gnChEZ6tph1H9IAelM2mYufYZVU1qqKt';
 const API_HOST = 'https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com';
 
 // Check if new access token is provided in the URL
@@ -12,35 +12,35 @@ if (hash.length > 0) {
         }
     });
     if (params.get('access_token') && params.get('expires_in') && params.get('token_type') === 'Bearer') {
-        window.localStorage.setItem('forge_access_token', params.get('access_token'));
-        window.localStorage.setItem('forge_token_expires_at', Date.now() + parseInt(params.get('expires_in')) * 1000);
+        window.localStorage.setItem('aps_access_token', params.get('access_token'));
+        window.localStorage.setItem('aps_token_expires_at', Date.now() + parseInt(params.get('expires_in')) * 1000);
         window.location.hash = '';
     }
 }
 
 // Check if the access token has expired, or schedule an expiration
-const accessToken = window.localStorage.getItem('forge_access_token');
-const expiresAt = window.localStorage.getItem('forge_token_expires_at');
+const accessToken = window.localStorage.getItem('aps_access_token');
+const expiresAt = window.localStorage.getItem('aps_token_expires_at');
 if (accessToken) {
     if (!expiresAt || Date.now() >= parseInt(expiresAt)) {
-        window.localStorage.removeItem('forge_access_token');
-        window.localStorage.removeItem('forge_token_expires_at');
+        window.localStorage.removeItem('aps_access_token');
+        window.localStorage.removeItem('aps_token_expires_at');
     } else {
         setTimeout(function () {
-            window.localStorage.removeItem('forge_access_token');
-            window.localStorage.removeItem('forge_token_expires_at');
+            window.localStorage.removeItem('aps_access_token');
+            window.localStorage.removeItem('aps_token_expires_at');
             window.location.reload();
         }, parseInt(expiresAt) - Date.now());
     }
 }
 
 // Initialize UI depending on the user status
-window.ACCESS_TOKEN = window.localStorage.getItem('forge_access_token');
+window.ACCESS_TOKEN = window.localStorage.getItem('aps_access_token');
 if (window.ACCESS_TOKEN) {
     $('[data-visibility="logged-in"]').show();
     $('#logout').click(() => {
-        window.localStorage.removeItem('forge_access_token');
-        window.localStorage.removeItem('forge_token_expires_at');
+        window.localStorage.removeItem('aps_access_token');
+        window.localStorage.removeItem('aps_token_expires_at');
         window.location.reload();
     });
     window.bim360Client = new forge.BIM360Client({ token: window.ACCESS_TOKEN });
@@ -50,7 +50,7 @@ if (window.ACCESS_TOKEN) {
     $('[data-visibility="logged-out"]').show();
     $('#login').click(() => {
         const url = new URL('https://developer.api.autodesk.com/authentication/v1/authorize');
-        url.searchParams.set('client_id', FORGE_CLIENT_ID);
+        url.searchParams.set('client_id', APS_CLIENT_ID);
         url.searchParams.set('redirect_uri', window.location.protocol + '//' + window.location.host);
         url.searchParams.set('response_type', 'token');
         url.searchParams.set('scope', 'data:read viewables:read');

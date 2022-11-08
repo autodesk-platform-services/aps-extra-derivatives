@@ -1,7 +1,8 @@
-# forge-extra-derivatives-aws
+# aps-extra-derivatives
 
-Experimental AWS serverless architecture for post-processing 3D models from [Autodesk Forge](https://forge.autodesk.com)
-to additional formats such as [glTF, glb](https://www.khronos.org/gltf), or [Usdz](https://graphics.pixar.com/usd/release/wp_usdz.html).
+Experimental service (deployed as an AWS serverless architecture) for post-processing 3D models
+from [Autodesk Platform services](https://pas.autodesk.com) to additional formats such as [glTF, glb](https://www.khronos.org/gltf),
+or [Usdz](https://graphics.pixar.com/usd/release/wp_usdz.html).
 
 ![Screenshot](./screenshot.png)
 
@@ -9,7 +10,7 @@ to additional formats such as [glTF, glb](https://www.khronos.org/gltf), or [Usd
 
 ### REST API
 
-1. Use the `POST https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com/Prod/jobs/{urn}/{guid}` request to process a specific Forge model viewable.
+1. Use the `POST https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com/Prod/jobs/{urn}/{guid}` request to process a specific APS model viewable.
 2. Use the `GET https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com/Prod/jobs/{urn}/{guid}` request to check the status of the processing.
 3. Use the `POST https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com/Prod/jobs/{urn}/{guid}/signedurl` to generate temporary, read-only
 signed URLs for downloading the different artifacts.
@@ -22,7 +23,7 @@ header with the same token you would use in requests to the Model Derivative ser
 
 ### Demo App
 
-Go to [http://forge-extra-derivs-client.s3-website-us-west-2.amazonaws.com](http://forge-extra-derivs-client.s3-website-us-west-2.amazonaws.com),
+Go to [https://aps-extra-derivatives.autodesk.io](https://aps-extra-derivatives.autodesk.io),
 log in with your Autodesk account, browse through your hubs, projects, and designs. After selecting a specific viewable of a design,
 start the conversion process (unless you have already done so in the past), wait for it to complete, and then download or preview
 the conversion outputs.
@@ -40,7 +41,7 @@ Here's a quick description of the different resources used in the AWS SAM templa
 - _PostJobFunction_ - Lambda function (Node.js) handling `POST` requests
 - _GenerateArtifactUrlsFunction_ - Lambda function (Node.js) handling `POST` requests that generate temporary signed URLs for artifacts
 - _ConversionStateMachine_ - Step Function orchestrating individual steps of the conversion
-- _DownloadSvfFunction_ - Lambda function (Node.js) handling the downloading of SVF assets from Forge
+- _DownloadSvfFunction_ - Lambda function (Node.js) handling the downloading of SVF assets from APS
 - _ConvertSvfToGltfFunction_ - Lambda function (Node.js) converting SVF assets to glTF
 - _ConvertGltfToGlbFunction_ - Lambda function (Node.js) converting glTF to glb
 - _ConvertGltfToDracoFunction_ - Lambda function (Node.js) converting glTF to glb with Draco compression
