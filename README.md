@@ -1,10 +1,10 @@
-# aps-extra-derivatives
+# Extra Derivatives
 
 Experimental service (deployed as an AWS serverless architecture) for post-processing 3D models
 from [Autodesk Platform services](https://pas.autodesk.com) to additional formats such as [glTF, glb](https://www.khronos.org/gltf),
 or [Usdz](https://graphics.pixar.com/usd/release/wp_usdz.html).
 
-![Screenshot](./screenshot.png)
+![Screenshot](./thumbnail.png)
 
 ## Experimental Usage
 
