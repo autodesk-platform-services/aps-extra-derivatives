@@ -1,5 +1,12 @@
 # Extra Derivatives
 
+![platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
+[![node.js](https://img.shields.io/badge/node.js-16.17-blue.svg)](https://nodejs.org)
+[![npm](https://img.shields.io/badge/npm-8.15-blue.svg)](https://www.npmjs.com/)
+[![license](https://img.shields.io/:license-mit-green.svg)](https://opensource.org/licenses/MIT)
+
+[![Model Derivative](https://img.shields.io/badge/Model%20Derivative-v2-green.svg)](https://aps.autodesk.com/en/docs/model-derivative/v2/overview/)
+
 Experimental service (deployed as an AWS serverless architecture) for post-processing 3D models
 from [Autodesk Platform services](https://pas.autodesk.com) to additional formats such as [glTF, glb](https://www.khronos.org/gltf),
 or [Usdz](https://graphics.pixar.com/usd/release/wp_usdz.html).
@@ -51,3 +58,16 @@ Here's a quick description of the different resources used in the AWS SAM templa
 The _ConversionStateMachine_ consists of the following states:
 
 ![Conversion state machine](./docs/conversion-state-machine.png)
+
+## Troubleshooting
+
+Submit your question via [APS Support Form](https://aps.autodesk.com/en/support/get-help).
+
+## License
+
+This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+Please see the [LICENSE](LICENSE) file for more details.
+
+## Authors
+
+Petr Broz ([@ipetrbroz](https://twitter.com/ipetrbroz)), Developer Advocate
