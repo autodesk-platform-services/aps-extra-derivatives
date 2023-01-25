@@ -243,7 +243,8 @@ async function updatePreviewAvailable(urn, guid, job) {
                     $('#qr-modal .modal-body').empty().qrcode({
                         width: 512,
                         height: 512,
-                        text: url
+                        text: url,
+                        correctLevel: 0
                     });
                     $('#qr-modal').modal('show');
                 });
