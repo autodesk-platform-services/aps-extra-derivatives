@@ -1,4 +1,4 @@
-const APS_CLIENT_ID = 'gnChEZ6tph1H9IAelM2mYufYZVU1qqKt';
+const APS_CLIENT_ID = '4EYziCb3e6rMT6PYG7sGhPOpmmYxA3yT';
 const APS_CALLBACK_URL = window.location.protocol + '//' + window.location.host;
 const API_HOST = 'https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com';
 
