@@ -42,8 +42,8 @@ window.addEventListener('DOMContentLoaded', async function () {
             localStorage.removeItem('aps_access_token_expires_at');
             window.location.reload();
         });
-        window.bim360Client = new forge.BIM360Client({ token: window.ACCESS_TOKEN });
-        window.modelDerivativeClient = new forge.ModelDerivativeClient({ token: window.ACCESS_TOKEN });
+        window.bim360Client = new APS.BIM360Client({ token: window.ACCESS_TOKEN });
+        window.modelDerivativeClient = new APS.ModelDerivativeClient({ token: window.ACCESS_TOKEN });
         updateHubsDropdown();
     } else {
         $('[data-visibility="logged-out"]').show();
