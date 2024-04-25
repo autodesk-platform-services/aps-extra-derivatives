@@ -21,7 +21,7 @@ window.addEventListener('DOMContentLoaded', async function () {
     const accessToken = localStorage.getItem('aps_access_token');
     const expiresAt = localStorage.getItem('aps_access_token_expires_at');
     if (accessToken) {
-        if (expiresAt && Date.now() < parseInt(expiresAt)) {
+        if (expiresAt && parseInt(expiresAt) < Date.now()) {
             localStorage.removeItem('aps_access_token');
             localStorage.removeItem('aps_access_token_expires_at');
         } else {
