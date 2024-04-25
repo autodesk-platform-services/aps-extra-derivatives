@@ -2,8 +2,8 @@
     "dependencies": {
         "adm-zip": "^0.5.9",
         "aws-sdk": "^2.1113.0",
-        "forge-convert-utils": "^4.0.1",
-        "forge-server-utils": "^8.3.5",
+        "svf-utils": "^5.0.3",
+        "aps-sdk-node": "^10.0.1",
         "fs-extra": "^10.1.0",
         "gltf-pipeline": "^3.0.4"
     }

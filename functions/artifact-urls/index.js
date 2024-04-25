@@ -1,5 +1,5 @@
 const { DynamoDB, S3 } = require('aws-sdk');
-const { ModelDerivativeClient } = require('forge-server-utils');
+const { ModelDerivativeClient } = require('aps-sdk-node');
 const { JOBS_TABLE, ARTIFACTS_BUCKET } = process.env;
 
 const db = new DynamoDB({ apiVersion: '2012-08-10' });

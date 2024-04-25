@@ -1,5 +1,5 @@
 const fse = require('fs-extra');
-const { SvfReader, GltfWriter } = require('forge-convert-utils');
+const { SvfReader, GltfWriter } = require('svf-utils');
 const { downloadArtifact, uploadArtifact, decompress, compress } = require('/opt/nodejs/helpers.js');
 
 async function convert(inputSvfPath, outputDir) {

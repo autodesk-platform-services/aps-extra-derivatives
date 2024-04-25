@@ -1,10 +1,12 @@
 const path = require('path');
 const fse = require('fs-extra');
-const { ModelDerivativeClient, ManifestHelper } = require('forge-server-utils');
-const { SvfReader } = require('forge-convert-utils');
+const { ModelDerivativeClient, ManifestHelper } = require('aps-sdk-node');
+const { SvfReader, BasicAuthenticationProvider } = require('svf-utils');
 const { uploadArtifact, compress } = require('/opt/nodejs/helpers.js');
 
 async function download(urn, guid, token, outputFolder) {
+    const authenticationProvider = new BasicAuthenticationProvider(token);
+
     const modelDerivativeClient = new ModelDerivativeClient({ token });
     const helper = new ManifestHelper(await modelDerivativeClient.getManifest(urn));
     const derivatives = helper.search({ guid, type: 'resource', role: 'graphics' });
@@ -18,7 +20,7 @@ async function download(urn, guid, token, outputFolder) {
     const svf = await modelDerivativeClient.getDerivative(urn, encodeURI(derivative.urn));
     fse.ensureDirSync(outputFolder);
     fse.writeFileSync(path.join(outputFolder, 'output.svf'), new Uint8Array(svf));
-    const reader = await SvfReader.FromDerivativeService(urn, guid, { token });
+    const reader = await SvfReader.FromDerivativeService(urn, guid, authenticationProvider);
     const manifest = await reader.getManifest();
     for (const asset of manifest.assets) {
         if (!asset.URI.startsWith('embed:')) {

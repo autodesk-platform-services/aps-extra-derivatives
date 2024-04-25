@@ -1,5 +1,5 @@
 const { DynamoDB, StepFunctions } = require('aws-sdk');
-const { ModelDerivativeClient } = require('forge-server-utils');
+const { ModelDerivativeClient } = require('aps-sdk-node');
 const { JOBS_TABLE, CONVERSION_STEP_FUNCTION } = process.env;
 
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
