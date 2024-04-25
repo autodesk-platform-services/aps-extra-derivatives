@@ -1,61 +1,139 @@
 const APS_CLIENT_ID = 'gnChEZ6tph1H9IAelM2mYufYZVU1qqKt';
+const APS_CALLBACK_URL = window.location.protocol + '//' + window.location.host;
 const API_HOST = 'https://m5ey85w3lk.execute-api.us-west-2.amazonaws.com';
 
-// Check if new access token is provided in the URL
-const { hash } = window.location;
-if (hash.length > 0) {
-    const params = new Map();
-    hash.substr(1).split('&').forEach(pair => {
-        const tokens = pair.split('=');
-        if (tokens.length === 2) {
-            params.set(tokens[0], tokens[1]);
+window.addEventListener('DOMContentLoaded', async function () {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('code')) { // If the URL contains a `code` query parameter, exchange it for an access token
+        try {
+            const codeVerifier = localStorage.getItem('aps_code_verifier'); // Retrieve code verifier from local storage
+            const credentials = await exchangeToken(APS_CLIENT_ID, codeVerifier, params.get('code'), APS_CALLBACK_URL);
+            localStorage.setItem('aps_access_token', credentials.access_token);
+            localStorage.setItem('aps_access_token_expires_at', Date.now() + credentials.expires_in * 1000);
+        } catch (err) {
+            console.error(err);
+            alert('Login unsuccessful. Please see the console for more details.');
+            return;
         }
-    });
-    if (params.get('access_token') && params.get('expires_in') && params.get('token_type') === 'Bearer') {
-        window.localStorage.setItem('aps_access_token', params.get('access_token'));
-        window.localStorage.setItem('aps_token_expires_at', Date.now() + parseInt(params.get('expires_in')) * 1000);
-        window.location.hash = '';
     }
-}
 
-// Check if the access token has expired, or schedule an expiration
-const accessToken = window.localStorage.getItem('aps_access_token');
-const expiresAt = window.localStorage.getItem('aps_token_expires_at');
-if (accessToken) {
-    if (!expiresAt || Date.now() >= parseInt(expiresAt)) {
-        window.localStorage.removeItem('aps_access_token');
-        window.localStorage.removeItem('aps_token_expires_at');
-    } else {
-        setTimeout(function () {
-            window.localStorage.removeItem('aps_access_token');
-            window.localStorage.removeItem('aps_token_expires_at');
+    // Check if the access token has expired, or schedule an expiration
+    const accessToken = localStorage.getItem('aps_access_token');
+    const expiresAt = localStorage.getItem('aps_access_token_expires_at');
+    if (accessToken) {
+        if (expiresAt && Date.now() < parseInt(expiresAt)) {
+            localStorage.removeItem('aps_access_token');
+            localStorage.removeItem('aps_access_token_expires_at');
+        } else {
+            setTimeout(function () {
+                localStorage.removeItem('aps_access_token');
+                localStorage.removeItem('aps_access_token_expires_at');
+                window.location.reload();
+            }, parseInt(expiresAt) - Date.now());
+        }
+    }
+    window.ACCESS_TOKEN = localStorage.getItem('aps_access_token');
+
+    // Initialize UI depending on the user status
+    if (window.ACCESS_TOKEN) {
+        $('[data-visibility="logged-in"]').show();
+        $('#logout').click(() => {
+            localStorage.removeItem('aps_access_token');
+            localStorage.removeItem('aps_access_token_expires_at');
             window.location.reload();
-        }, parseInt(expiresAt) - Date.now());
+        });
+        window.bim360Client = new forge.BIM360Client({ token: window.ACCESS_TOKEN });
+        window.modelDerivativeClient = new forge.ModelDerivativeClient({ token: window.ACCESS_TOKEN });
+        updateHubsDropdown();
+    } else {
+        $('[data-visibility="logged-out"]').show();
+        const codeVerifier = generateRandomString(64); // Length must be between 43 and 128
+        localStorage.setItem('aps_code_verifier', codeVerifier); // Store code verifier for later use
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        $('#login').click(() => {
+            const url = generateLoginUrl(APS_CLIENT_ID, APS_CALLBACK_URL, ['data:read', 'viewables:read'], '123456', codeChallenge);
+            window.location.replace(url);
+        });
     }
+});
+
+/**
+ * Generates random string of specified length.
+ * @param {number} len Length of the output string.
+ * @param {string} chars Characters allowed in the output string.
+ * @returns {string}
+ */
+function generateRandomString(len, chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') {
+    const arr = new Array(len);
+    for (let i = 0; i < len; i++) {
+        arr[i] = chars[Math.floor(Math.random() * chars.length)];
+    }
+    return arr.join('');
 }
 
-// Initialize UI depending on the user status
-window.ACCESS_TOKEN = window.localStorage.getItem('aps_access_token');
-if (window.ACCESS_TOKEN) {
-    $('[data-visibility="logged-in"]').show();
-    $('#logout').click(() => {
-        window.localStorage.removeItem('aps_access_token');
-        window.localStorage.removeItem('aps_token_expires_at');
-        window.location.reload();
+/**
+ * Generates a PKCE code challenge for given code verifier (see https://aps.autodesk.com/en/docs/oauth/v2/tutorials/code-challenge/).
+ * @async
+ * @param {string} codeVerifier Code verifier.
+ * @returns {Promise<string>}
+ */
+async function generateCodeChallenge(codeVerifier) {
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier));
+    return window.btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+/**
+ * Generates URL for initiating the PKCE authorization workflow (see https://aps.autodesk.com/en/docs/oauth/v2/tutorials/get-3-legged-token-pkce/#step-1-direct-the-user-to-the-authorization-web-flow-with-pkce).
+ * @param {string} clientId Application client ID.
+ * @param {string} callbackUrl Callback URL as configured on the dev. portal.
+ * @param {array} scopes List of authentication scopes (see https://aps.autodesk.com/en/docs/oauth/v2/developers_guide/scopes/).
+ * @param {string} nonce Arbitrary string used to associate a client session with an ID token and to mitigate replay attacks.
+ * @param {string} challenge Code challenge generated from code verifier (see `generateCodeChallenge`).
+ * @returns {string}
+ */
+function generateLoginUrl(clientId, callbackUrl, scopes, nonce, challenge) {
+    const url = new URL('https://developer.api.autodesk.com/authentication/v2/authorize');
+    url.searchParams.append('response_type', 'code');
+    url.searchParams.append('client_id', clientId);
+    url.searchParams.append('redirect_uri', callbackUrl);
+    url.searchParams.append('scope', scopes.join(' '));
+    url.searchParams.append('nonce', nonce);
+    url.searchParams.append('prompt', 'login');
+    url.searchParams.append('code_challenge', challenge);
+    url.searchParams.append('code_challenge_method', 'S256');
+    return url.toString();
+}
+
+/**
+ * Exchanges temporary code from the PKCE authorization workflow for access token.
+ * See https://aps.autodesk.com/en/docs/oauth/v2/tutorials/get-3-legged-token-pkce/#step-3-exchange-the-authorization-code-with-pkce-for-an-access-token.
+ * @async
+ * @param {string} clientId Application client ID.
+ * @param {string} codeVerifier PKCE code verifier.
+ * @param {string} code Temporary code received from the PKCE authorization workflow.
+ * @param {string} callbackUrl Callback URL as configured on the dev. portal.
+ * @returns {Promise<object>}
+ */
+async function exchangeToken(clientId, codeVerifier, code, callbackUrl) {
+    const payload = {
+        'grant_type': 'authorization_code',
+        'client_id': clientId,
+        'code_verifier': codeVerifier,
+        'code': code,
+        'redirect_uri': callbackUrl
+    };
+    const resp = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: Object.keys(payload).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(payload[key])).join('&')
     });
-    window.bim360Client = new forge.BIM360Client({ token: window.ACCESS_TOKEN });
-    window.modelDerivativeClient = new forge.ModelDerivativeClient({ token: window.ACCESS_TOKEN });
-    updateHubsDropdown();
-} else {
-    $('[data-visibility="logged-out"]').show();
-    $('#login').click(() => {
-        const url = new URL('https://developer.api.autodesk.com/authentication/v1/authorize');
-        url.searchParams.set('client_id', APS_CLIENT_ID);
-        url.searchParams.set('redirect_uri', window.location.protocol + '//' + window.location.host);
-        url.searchParams.set('response_type', 'token');
-        url.searchParams.set('scope', 'data:read viewables:read');
-        window.location.replace(url.toString());
-    });
+    if (!resp.ok) {
+        throw new Error(await resp.text());
+    }
+    const credentials = await resp.json();
+    return credentials;
 }
 
 async function updateHubsDropdown() {
@@ -204,7 +282,7 @@ async function updatePreviewAvailable(urn, guid, job) {
                 $preview.append(`
                     <div class="cards">
                         <div id="preview-${urn}-${guid}" class="card">
-                            ${urls['GlbDraco'] ? `<div class="card-img-top"><model-viewer class="model-preview" src="${urls['GlbDraco']}" alt="glb preview" auto-rotate camera-controls ar ar-modes="webxr scene-viewer quick-look fallback" ar-scale="auto"></model-viewer></div>`: ''}
+                            ${urls['GlbDraco'] ? `<div class="card-img-top"><model-viewer class="model-preview" src="${urls['GlbDraco']}" alt="glb preview" auto-rotate camera-controls ar ar-modes="webxr scene-viewer quick-look fallback" ar-scale="auto"></model-viewer></div>` : ''}
                             <div class="card-body">
                                 <h5 class="card-title">Outputs</h5>
                                 <table id="outputs-${urn}-${guid}" class="table table-hover table-sm">
@@ -216,10 +294,9 @@ async function updatePreviewAvailable(urn, guid, job) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${
-                                            Object.keys(urls).map(artifactType => {
-                                                const artifactUrl = urls[artifactType];
-                                                return `
+                                        ${Object.keys(urls).map(artifactType => {
+                    const artifactUrl = urls[artifactType];
+                    return `
                                                     <tr id="output-${urn}-${guid}-${artifactType}">
                                                         <td>${artifactType}</td>
                                                         <td>
@@ -230,8 +307,8 @@ async function updatePreviewAvailable(urn, guid, job) {
                                                         </td>
                                                     </tr>
                                                 `;
-                                            }).join('\n')
-                                        }
+                }).join('\n')
+                    }
                                     </tbody>
                                 </table>
                             </div>
